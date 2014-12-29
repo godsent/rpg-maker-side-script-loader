@@ -20,7 +20,7 @@
   ```
   SideScriptsLoader.load 'dir_name'
   ```
-  Комбинируя этот и предыдущий методы можно добиться загрузки всех файлов из папки, при этом все вызовы require в этих файлах так же будут работать:
+5. Комбинируя `add_to_path` и `load` можно добиться загрузки всех файлов из папки, при этом все вызовы require в этих файлах так же будут работать:
   ```
   SideScriptsLoader.add_to_path 'dir_name'
   SideScriptsLoader.load 'lib'
