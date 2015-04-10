@@ -1,22 +1,32 @@
 class RequireLoader
   module ToInclude
     def require(path)
-      super
-    rescue Exception => e
-      RequireLoader.new(path).load
-    rescue
-      raise e
+      if RequireLoader.batch?
+        RequireLoader.new(path).load
+      else
+        begin
+          super
+        rescue Exception => e
+          RequireLoader.new(path).load
+        end
+      end
     end
   end
 
   class << self
+    attr_writer :batch
     attr_accessor :binding
 
     def pathes
       @pathes ||= []
     end
 
+    def batch?
+      !!@batch
+    end
+
     def enabled?
+      return true if batch?
       Dir.pwd.encode 'utf-8'
       false
     rescue Encoding::UndefinedConversionError
@@ -29,8 +39,16 @@ class RequireLoader
   end
 
   def load
-     File.open founded_path do |file|
+    File.open founded_path do |file|
+      write_to_batch founded_path, file if RequireLoader.batch?
       eval file.lines.to_a.join, self.class.binding
+    end
+  end
+
+  def write_to_batch(path, ruby_file)
+    File.open 'batch.rb', 'w+' do |batch_file|
+      batch_file.puts "##{path}"
+      ruby_file.lines.each { |line| batch_file.puts line }
     end
   end
 
