@@ -1,5 +1,6 @@
 Скрипт для загрузки внешних .rb файлов для Rpg Maker VX ACE
 Позволяет подключать внешние скрипты, загружать папки со скриптами целиком, подключать простые гемы (без extension)
+Так же по умолчанию сливает все подключенные скрипты в один файл batch.rb, который находится в корне проекта.
 
 ###Как использовать:
 * Добавте скрипт в мейкер
@@ -25,3 +26,12 @@
   SideScriptsLoader.add_to_path 'dir_name'
   SideScriptsLoader.load 'lib'
   ```
+* Для отключения функции слияние всех скриптов в файл batch.rb
+```
+class RequireLoader
+  #set to false if you do not want to compress 
+  #all the scripts to batch.rb file 
+  BATCH =  false
+  ...
+end
+```
