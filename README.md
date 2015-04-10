@@ -27,11 +27,11 @@
   SideScriptsLoader.load 'lib'
   ```
 * Для отключения функции слияние всех скриптов в файл batch.rb
-```
-class RequireLoader
-  #set to false if you do not want to compress 
-  #all the scripts to batch.rb file 
-  BATCH =  false
-  ...
-end
-```
+  ```
+  class RequireLoader
+    #set to false if you do not want to compress 
+    #all the scripts to batch.rb file 
+    BATCH =  false
+    ...
+  end
+  ```
