@@ -27,7 +27,7 @@ SideScriptsLoader.load 'dir_name'
 SideScriptsLoader.add_to_path 'dir_name'
 SideScriptsLoader.load 'dir_name'
 ```
-* Для отключения функции слияние всех скриптов в файл batch.rb
+* Для отключения функции слияния всех скриптов в файл batch.rb
 ```
 class RequireLoader
   #set to false if you do not want to compress 
