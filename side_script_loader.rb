@@ -1,4 +1,8 @@
 class RequireLoader
+  #set to false if you do not want to compress 
+  #all the scripts to batch.rb file 
+  BATCH =  true
+  
   module ToInclude
     def require(path)
       if RequireLoader.batch?
@@ -14,15 +18,19 @@ class RequireLoader
   end
 
   class << self
-    attr_writer :batch
     attr_accessor :binding
+    attr_writer :batch_file_created
 
     def pathes
       @pathes ||= []
     end
 
+    def batch_file_created?
+      !!@batch_file_created
+    end
+
     def batch?
-      !!@batch
+      !!BATCH
     end
 
     def enabled?
@@ -40,22 +48,29 @@ class RequireLoader
 
   def load
     File.open founded_path do |file|
-      write_to_batch founded_path, file if RequireLoader.batch?
-      eval file.lines.to_a.join, self.class.binding
+      lines = file.lines.to_a.join
+      write_to_batch lines if RequireLoader.batch?
+      eval lines, self.class.binding
     end
   end
 
-  def write_to_batch(path, ruby_file)
-    File.open 'batch.rb', 'w+' do |batch_file|
-      batch_file.puts "##{path}"
-      ruby_file.lines.each { |line| batch_file.puts line }
+  def write_to_batch(ruby_code)
+    File.open 'batch.rb', batch_file_mode do |batch_file|
+      RequireLoader.batch_file_created = true
+      batch_file.puts "##{founded_path}"
+      ruby_code.lines.each do |line|
+        next if line.start_with? 'require'
+        batch_file.puts line
+      end
     end
+  end
+
+  def batch_file_mode
+    self.class.batch_file_created? ? 'a' : 'w'
   end
 
   def founded_path
-    all_pathes.find { |file_name| File.exist? file_name } || (
-      puts(all_pathes) || raise(LoadError)
-    )
+    all_pathes.find { |file_name| File.exist? file_name } || raise(LoadError)
   end
 
   def all_pathes
