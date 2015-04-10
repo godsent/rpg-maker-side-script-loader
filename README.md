@@ -13,6 +13,7 @@ SideScriptsLoader.add_gems_to_path
 require 'gem_name' #имя папки гема в дирректории gems
 ```
   - Обратите внимание, что многие стандартные модули и классы вырезаны в мейкере. Многие гемы делают require таких модулей, и это вызовет эксепшн в вашей игре. Каждый такой случай необходимо разбирать и фиксить отдельно. Так же в папку gems нужно поместить все зависимости гема, если такие есть.
+
 * Для добавление папки в $LOAD_PATH (дирректория должна лежать в корне проекта)
 ```
 SideScriptsLoader.add_to_path 'dir_name'
@@ -24,7 +25,7 @@ SideScriptsLoader.load 'dir_name'
 * Комбинируя `add_to_path` и `load` можно добиться загрузки всех файлов из папки, при этом все вызовы require в этих файлах так же будут работать:
 ```
 SideScriptsLoader.add_to_path 'dir_name'
-SideScriptsLoader.load 'lib'
+SideScriptsLoader.load 'dir_name'
 ```
 * Для отключения функции слияние всех скриптов в файл batch.rb
 ```
