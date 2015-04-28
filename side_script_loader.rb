@@ -59,7 +59,7 @@ class RequireLoader
       RequireLoader.batch_file_created = true
       batch_file.puts "##{founded_path}"
       ruby_code.lines.each do |line|
-        next if line.start_with? 'require'
+        next if line =~ /(\b|\.)require(\b|\()/
         batch_file.puts line
       end
     end
