@@ -134,7 +134,7 @@ class SideScriptsLoader
       load = load_config
       load.each do |entry|
         entry.gsub!(/[\n]$/){""}
-        require filename(entry) if entry =~ /\.rb\Z/
+        require filename(entry)
         dir_entries -= ["#{entry}.rb"]
       end
     end
