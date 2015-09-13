@@ -129,14 +129,14 @@ class SideScriptsLoader
   end
 
   def load_entries
-    dir_entries = Dir.entries(dirname).delete_if{|entry|entry=~/^\./}
+    dir_entries = Dir.entries(dirname).delete_if{ |entry| entry=~/^\./ }
     if dir_entries.include?("load.cfg")
       load = load_config
-      load.each{|entry|
+      load.each do |entry|
         entry.gsub!(/[\n]$/){""}
         require filename(entry) if entry =~ /\.rb\Z/
-        dir_entries-=["#{entry}.rb"]
-      }
+        dir_entries -= ["#{entry}.rb"]
+      end
     end
     dir_entries.each do |entry|
       require filename(entry) if entry =~ /\.rb\Z/
@@ -144,7 +144,7 @@ class SideScriptsLoader
   end
 
   def load_config
-    open(config,"r").readlines.delete_if{|line|line=~/^[\s]?#/}
+    open(config, "r").readlines.delete_if{ |line| line =~ /^[\s]?#/ }
   end
 
   def config
