@@ -1,9 +1,3 @@
-#~     File.open founded_path do |file|
-#~       lines = file.lines.to_a.join
-#~       write_to_batch lines if RequireLoader.batch?
-#~       eval lines, self.class.binding
-#~     end
-
 module Kernel
   alias fix_load_data load_data
   def load_data(file)
