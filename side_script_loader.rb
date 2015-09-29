@@ -61,21 +61,6 @@ class RequireLoader
     eval load_data(founded_path), self.class.binding
   end
 
-  def batch_file_mode
-    RequireLoader.batch_file_created? ? 'a' : 'w'
-  end
-  
-  def write_to_batch(ruby_code)
-    File.open 'batch.rb', batch_file_mode do |batch_file|
-      RequireLoader.batch_file_created = true
-      batch_file.puts "##{founded_path}"
-      ruby_code.lines.each do |line|
-        next if line =~ /(\b|\.)require(\b|\()/
-        batch_file.puts line
-      end
-    end
-  end
-
   def founded_path
     all_pathes.find { |file_name| File.exist? file_name } || raise(LoadError)
   end
