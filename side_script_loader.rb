@@ -1,8 +1,25 @@
+#~     File.open founded_path do |file|
+#~       lines = file.lines.to_a.join
+#~       write_to_batch lines if RequireLoader.batch?
+#~       eval lines, self.class.binding
+#~     end
+
+module Kernel
+  alias fix_load_data load_data
+  def load_data(file)
+    data = fix_load_data(file)
+    if data.kind_of?(String)
+      data.force_encoding('UTF-8')
+    end
+    data
+  end
+end
+
 class RequireLoader
   #set to false if you do not want to compress 
   #all the scripts to batch.rb file 
   BATCH =  true
-  
+ 
   module ToInclude
     def require(path)
       if RequireLoader.batch?
@@ -47,13 +64,13 @@ class RequireLoader
   end
 
   def load
-    File.open founded_path do |file|
-      lines = file.lines.to_a.join
-      write_to_batch lines if RequireLoader.batch?
-      eval lines, self.class.binding
-    end
+    eval load_data(founded_path), self.class.binding
   end
 
+  def batch_file_mode
+    RequireLoader.batch_file_created? ? 'a' : 'w'
+  end
+  
   def write_to_batch(ruby_code)
     File.open 'batch.rb', batch_file_mode do |batch_file|
       RequireLoader.batch_file_created = true
@@ -63,10 +80,6 @@ class RequireLoader
         batch_file.puts line
       end
     end
-  end
-
-  def batch_file_mode
-    self.class.batch_file_created? ? 'a' : 'w'
   end
 
   def founded_path
@@ -156,3 +169,34 @@ class SideScriptsLoader
     RequireLoader.enabled? ? joined : File.expand_path(joined, Dir.pwd)
   end
 end
+
+class << Marshal
+  def batch_file_mode
+    RequireLoader.batch_file_created? ? 'a' : 'w'
+  end
+  
+  def write_to_batch(ruby_code)
+    File.open 'batch.rb', batch_file_mode do |batch_file|
+      RequireLoader.batch_file_created = true
+      batch_file.puts "##{@@founded_path}"
+      ruby_code.lines.each do |line|
+        next if line =~ /(\b|\.)require(\b|\()/
+        batch_file.puts line
+      end
+    end
+  end
+  alias gem_load load
+  def load(port, proc = nil)
+    gem_load(port, proc)  
+  rescue TypeError
+    if port.kind_of?(File)
+      @@founded_path =  port.path
+      port.rewind 
+      lines = port.lines.to_a.join
+      write_to_batch lines if RequireLoader.batch?
+      lines
+    else
+      port
+    end
+  end
+end 
