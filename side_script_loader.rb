@@ -27,7 +27,7 @@ class RequireLoader
       end
     end
   end
-
+  
   class << self
     attr_accessor :binding
     attr_writer :batch_file_created
@@ -51,6 +51,21 @@ class RequireLoader
     rescue Encoding::UndefinedConversionError
       true
     end
+        
+    def batch_file_mode
+      RequireLoader.batch_file_created? ? 'a' : 'w'
+    end
+    
+    def write_to_batch(ruby_code)
+      File.open 'batch.rb', batch_file_mode do |batch_file|
+        RequireLoader.batch_file_created = true
+        batch_file.puts "##{@@founded_path}"
+        ruby_code.lines.each do |line|
+          next if line =~ /(\b|\.)require(\b|\()/
+          batch_file.puts line
+        end
+      end
+    end
   end
 
   def initialize(path)
@@ -60,9 +75,9 @@ class RequireLoader
   def load
     eval load_data(founded_path), self.class.binding
   end
-
+  
   def founded_path
-    all_pathes.find { |file_name| File.exist? file_name } || raise(LoadError)
+    @@founded_path = all_pathes.find { |file_name| File.exist? file_name } || raise(LoadError)
   end
 
   def all_pathes
@@ -150,29 +165,14 @@ class SideScriptsLoader
 end
 
 class << Marshal
-  def batch_file_mode
-    RequireLoader.batch_file_created? ? 'a' : 'w'
-  end
-  
-  def write_to_batch(ruby_code)
-    File.open 'batch.rb', batch_file_mode do |batch_file|
-      RequireLoader.batch_file_created = true
-      batch_file.puts "##{@@founded_path}"
-      ruby_code.lines.each do |line|
-        next if line =~ /(\b|\.)require(\b|\()/
-        batch_file.puts line
-      end
-    end
-  end
-  alias gem_load load
+  alias side_script_load load
   def load(port, proc = nil)
-    gem_load(port, proc)  
+    side_script_load(port, proc)  
   rescue TypeError
     if port.kind_of?(File)
-      @@founded_path =  port.path
       port.rewind 
       lines = port.lines.to_a.join
-      write_to_batch lines if RequireLoader.batch?
+      RequireLoader.write_to_batch lines if RequireLoader.batch?
       lines
     else
       port
