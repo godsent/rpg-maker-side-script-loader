@@ -1,5 +1,6 @@
+($imported ||={})["Side_Scripts_Loaders"] = true#Add script to $imported
 module Kernel
-  alias fix_load_data load_data
+  alias fix_load_data load_data#Force encoding to UTF-8
   def load_data(file)
     data = fix_load_data(file)
     if data.kind_of?(String)
@@ -169,13 +170,17 @@ class << Marshal
   def load(port, proc = nil)
     side_script_load(port, proc)  
   rescue TypeError
-    if port.kind_of?(File)
+    if port.kind_of?(File)#if port is file
       port.rewind 
-      lines = port.lines.to_a.join
-      RequireLoader.write_to_batch lines if RequireLoader.batch?
-      lines
+	  if port.extname == ".rb"#id ruby script file
+        lines = port.lines.to_a.join
+        RequireLoader.write_to_batch lines if RequireLoader.batch?
+        return  lines
+	  else#just read
+	    return port.read
+	  end
     else
-      port
+      return port
     end
   end
 end 
