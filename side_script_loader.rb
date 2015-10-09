@@ -1,6 +1,6 @@
 ($imported ||={})["Side_Scripts_Loaders"] = true#Add script to $imported
 module Kernel
-  alias fix_load_data load_data#Force encoding to UTF-8
+  alias fix_load_data load_data
   def load_data(file)
     data = fix_load_data(file)
     if data.kind_of?(String)
@@ -57,10 +57,10 @@ class RequireLoader
       RequireLoader.batch_file_created? ? 'a' : 'w'
     end
     
-    def write_to_batch(ruby_code)
+    def write_to_batch(ruby_code, file_path)
       File.open 'batch.rb', batch_file_mode do |batch_file|
         RequireLoader.batch_file_created = true
-        batch_file.puts "##{@@founded_path}"
+        batch_file.puts "##{file_path}"
         ruby_code.lines.each do |line|
           next if line =~ /(\b|\.)require(\b|\()/
           batch_file.puts line
@@ -78,7 +78,7 @@ class RequireLoader
   end
   
   def founded_path
-    @@founded_path = all_pathes.find { |file_name| File.exist? file_name } || raise(LoadError)
+    all_pathes.find { |file_name| File.exist? file_name } || raise(LoadError)
   end
 
   def all_pathes
@@ -169,18 +169,14 @@ class << Marshal
   alias side_script_load load
   def load(port, proc = nil)
     side_script_load(port, proc)  
-  rescue TypeError
-    if port.kind_of?(File)#if port is file
+  rescue TypeError => e
+    if port.kind_of?(File) && port.extname == ".rb"
       port.rewind 
-	  if port.extname == ".rb"#id ruby script file
-        lines = port.lines.to_a.join
-        RequireLoader.write_to_batch lines if RequireLoader.batch?
-        return  lines
-	  else#just read
-	    return port.read
-	  end
+      lines = port.lines.to_a.join
+      RequireLoader.write_to_batch(lines, port.path) if RequireLoader.batch?
+      lines
     else
-      return port
+      raise e
     end
   end
 end 
