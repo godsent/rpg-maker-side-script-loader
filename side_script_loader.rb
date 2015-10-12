@@ -1,8 +1,20 @@
+($imported ||={})["Side_Scripts_Loaders"] = true#Add script to $imported
+module Kernel#Force UTF-8
+  alias fix_load_data load_data
+  def load_data(file)
+    data = fix_load_data(file)
+    if data.kind_of?(String)
+      data.force_encoding('UTF-8')
+    end
+    data
+  end
+end
+
 class RequireLoader
   #set to false if you do not want to compress 
   #all the scripts to batch.rb file 
   BATCH =  true
-  
+ 
   module ToInclude
     def require(path)
       if RequireLoader.batch?
@@ -16,7 +28,7 @@ class RequireLoader
       end
     end
   end
-
+  
   class << self
     attr_accessor :binding
     attr_writer :batch_file_created
@@ -40,6 +52,21 @@ class RequireLoader
     rescue Encoding::UndefinedConversionError
       true
     end
+        
+    def batch_file_mode
+      RequireLoader.batch_file_created? ? 'a' : 'w'
+    end
+    
+    def write_to_batch(ruby_code, file_path)
+      File.open 'batch.rb', batch_file_mode do |batch_file|
+        RequireLoader.batch_file_created = true
+        batch_file.puts "##{file_path}"
+        ruby_code.lines.each do |line|
+          next if line =~ /(\b|\.)require(\b|\()/
+          batch_file.puts line
+        end
+      end
+    end
   end
 
   def initialize(path)
@@ -47,28 +74,9 @@ class RequireLoader
   end
 
   def load
-    File.open founded_path do |file|
-      lines = file.lines.to_a.join
-      write_to_batch lines if RequireLoader.batch?
-      eval lines, self.class.binding
-    end
+    eval load_data(founded_path), self.class.binding
   end
-
-  def write_to_batch(ruby_code)
-    File.open 'batch.rb', batch_file_mode do |batch_file|
-      RequireLoader.batch_file_created = true
-      batch_file.puts "##{founded_path}"
-      ruby_code.lines.each do |line|
-        next if line =~ /(\b|\.)require(\b|\()/
-        batch_file.puts line
-      end
-    end
-  end
-
-  def batch_file_mode
-    self.class.batch_file_created? ? 'a' : 'w'
-  end
-
+  
   def founded_path
     all_pathes.find { |file_name| File.exist? file_name } || raise(LoadError)
   end
@@ -156,3 +164,19 @@ class SideScriptsLoader
     RequireLoader.enabled? ? joined : File.expand_path(joined, Dir.pwd)
   end
 end
+
+class << Marshal
+  alias side_script_load load
+  def load(port, proc = nil)
+    side_script_load(port, proc)  
+  rescue TypeError => e
+    if port.kind_of?(File) && File.extname(port.path) == ".rb"
+      port.rewind 
+      lines = port.lines.to_a.join
+      RequireLoader.write_to_batch(lines, port.path) if RequireLoader.batch?
+      lines
+    else
+      raise e
+    end
+  end
+end 
