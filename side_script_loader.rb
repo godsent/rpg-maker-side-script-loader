@@ -172,7 +172,7 @@ class << Marshal
   rescue TypeError => e
     if port.kind_of?(File) && File.extname(port.path) == ".rb"
       port.rewind 
-      lines = port.lines.to_a.join
+      lines = port.lines.to_a.join.gsub("\r\n", "\n")
       RequireLoader.write_to_batch(lines, port.path) if RequireLoader.batch?
       lines
     else
